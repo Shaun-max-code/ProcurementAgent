@@ -1,0 +1,7 @@
+Supplier,Category,MOQ,Country
+FoodCorp,Food,5000,USA
+NutriFoods,Food,10000,Canada
+FreshFactory,Food,8000,USA
+SnackWorks,Food,15000,USA
+BeautyLabs,Cosmetics,5000,USA
+GlowManufacturing,Cosmetics,10000,India

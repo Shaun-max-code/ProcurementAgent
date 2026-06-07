@@ -24,6 +24,8 @@ with st.form("client_form"):
 # Show submitted data
 if submitted:
 
+  if submitted:
+
     st.success("Request Captured!")
 
     st.json({
@@ -40,7 +42,7 @@ if submitted:
         suppliers["Category"].str.lower() == category.lower()
     ]
 
-    st.subheader("Recommended Suppliers")
+    st.subheader("🏭 Recommended Suppliers")
 
     if len(matches) > 0:
         st.dataframe(matches)
