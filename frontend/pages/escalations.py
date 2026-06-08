@@ -1,11 +1,31 @@
-# frontend/pages/escalations.py
-
 import streamlit as st
+import pandas as pd
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+
+ESCALATION_FILE = ROOT / "data" / "escalations.csv"
 
 st.title("⚠ Escalation Monitor")
 
-st.error("Supplier XYZ has not replied in 5 days")
+df = pd.read_csv(ESCALATION_FILE)
 
-st.warning("Supplier ABC meeting overdue")
+for _, row in df.iterrows():
 
-st.success("Supplier LMN responded")
+    if row["Days"] >= 7:
+
+        st.error(
+            f"{row['Supplier']} - {row['Issue']} ({row['Days']} days)"
+        )
+
+    elif row["Days"] >= 5:
+
+        st.warning(
+            f"{row['Supplier']} - {row['Issue']} ({row['Days']} days)"
+        )
+
+    else:
+
+        st.success(
+            f"{row['Supplier']} - {row['Issue']} ({row['Days']} days)"
+        )

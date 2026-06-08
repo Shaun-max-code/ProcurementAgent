@@ -1,6 +1,11 @@
-# frontend/pages/intake.py
-
 import streamlit as st
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT))
+
+from backend.agents.intake import save_request
 
 st.title("📋 Client Intake")
 
@@ -15,11 +20,11 @@ with st.form("client_form"):
 
 if submit:
 
-    st.success("Client Request Submitted")
+    save_request(
+        product,
+        category,
+        moq,
+        country
+    )
 
-    st.json({
-        "Product": product,
-        "Category": category,
-        "MOQ": moq,
-        "Country": country
-    })
+    st.success("✅ Request Saved Successfully")

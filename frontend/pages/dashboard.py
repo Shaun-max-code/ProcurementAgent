@@ -1,6 +1,12 @@
 import streamlit as st
 import pandas as pd
 
+try:
+    requests = pd.read_csv("../data/client_requests.csv")
+    request_count = len(requests)
+except:
+    request_count = 0
+
 st.set_page_config(page_title="Dashboard", page_icon="📊")
 
 st.title("📊 Procurement Dashboard")
