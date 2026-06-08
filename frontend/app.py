@@ -1,50 +1,77 @@
 import streamlit as st
-import pandas as pd
 
-# Page settings
+# Page Configuration
 st.set_page_config(
-    page_title="AI Procurement Agent",
+    page_title="Procurement AI",
+    page_icon="🚀",
     layout="wide"
 )
 
-# Title
-st.title("🚀 AI Procurement Agent")
-st.subheader("Client Intake Form")
+# Header
+st.title("🚀 Procurement AI Platform")
 
-# Form
-with st.form("client_form"):
-    product = st.text_input("Product Name")
-    category = st.text_input("Category")
-    moq = st.number_input("MOQ", min_value=0)
-    price = st.number_input("Target Price ($)", min_value=0.0)
-    country = st.text_input("Country")
+st.markdown("""
+### Intelligent Supplier Discovery & Procurement Workflow
 
-    submitted = st.form_submit_button("Submit")
+Manage your entire procurement process:
 
-# Show submitted data
-if submitted:
+- 📋 Client Intake
+- 🏭 Supplier Matching
+- 📅 Meeting Coordination
+- 📝 Follow-Ups
+- ⚠ Escalations
 
-  if submitted:
+Use the sidebar to navigate through the platform.
+""")
 
-    st.success("Request Captured!")
+# KPI Cards
+col1, col2, col3, col4 = st.columns(4)
 
-    st.json({
-        "product": product,
-        "category": category,
-        "moq": moq,
-        "price": price,
-        "country": country
-    })
+with col1:
+    st.metric("Brands", "12")
 
-    suppliers = pd.read_csv("suppliers.csv")
+with col2:
+    st.metric("Suppliers", "35")
 
-    matches = suppliers[
-        suppliers["Category"].str.lower() == category.lower()
-    ]
+with col3:
+    st.metric("Meetings", "7")
 
-    st.subheader("🏭 Recommended Suppliers")
+with col4:
+    st.metric("Escalations", "2")
 
-    if len(matches) > 0:
-        st.dataframe(matches)
-    else:
-        st.warning("No suppliers found.")
+st.divider()
+
+# Workflow Section
+st.subheader("🔄 Procurement Workflow")
+
+st.code("""
+Client Intake
+      ↓
+Supplier Matching
+      ↓
+Meeting Coordination
+      ↓
+Follow-Up Generation
+      ↓
+Escalation Monitoring
+""", language="text")
+
+st.divider()
+
+# Platform Overview
+st.subheader("📈 Platform Overview")
+
+st.info(
+    """
+    This platform helps brands discover suppliers,
+    coordinate meetings, generate follow-ups,
+    and monitor procurement workflows efficiently.
+    """
+)
+st.markdown("""
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
