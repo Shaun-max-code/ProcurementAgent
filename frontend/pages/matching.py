@@ -2,31 +2,34 @@ import streamlit as st
 import sys
 from pathlib import Path
 import pandas as pd
-
-# ==========================
-# PROJECT ROOT
-# ==========================
+from datetime import date
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
 
 from backend.agents.matching import find_matches
+from backend.agents.meeting import save_meeting
 
-# ==========================
-# PAGE TITLE
-# ==========================
+REQUEST_DB = ROOT / "procurement.db"
 
 st.title("🏭 Supplier Matching")
 
 # ==========================
-# LOAD LATEST CLIENT REQUEST
+# LOAD LATEST REQUEST
 # ==========================
-
-REQUEST_FILE = ROOT / "data" / "client_requests.csv"
 
 try:
 
-    requests = pd.read_csv(REQUEST_FILE)
+    import sqlite3
+
+    conn = sqlite3.connect(REQUEST_DB)
+
+    requests = pd.read_sql_query(
+        "SELECT * FROM requests",
+        conn
+    )
+
+    conn.close()
 
     if requests.empty:
         st.warning("No client requests found.")
@@ -40,7 +43,7 @@ except Exception as e:
     st.stop()
 
 # ==========================
-# DISPLAY LATEST REQUEST
+# SHOW LATEST REQUEST
 # ==========================
 
 st.subheader("📋 Latest Client Request")
@@ -48,34 +51,40 @@ st.subheader("📋 Latest Client Request")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.write(f"**Product:** {latest_request['Product']}")
-    st.write(f"**Category:** {latest_request['Category']}")
+
+    st.write(f"**Product:** {latest_request['product']}")
+    st.write(f"**Category:** {latest_request['category']}")
 
 with col2:
-    st.write(f"**MOQ:** {latest_request['MOQ']}")
-    st.write(f"**Country:** {latest_request['Country']}")
+
+    st.write(f"**MOQ:** {latest_request['moq']}")
+    st.write(f"**Country:** {latest_request['country']}")
 
 # ==========================
-# FIND MATCHING SUPPLIERS
+# FIND SUPPLIERS
 # ==========================
 
-category = latest_request["Category"]
-
-matches = find_matches(category)
+matches = find_matches(
+    latest_request["category"]
+)
 
 # ==========================
-# DISPLAY MATCHES
+# DISPLAY SUPPLIERS
 # ==========================
 
 st.subheader("🎯 Matched Suppliers")
 
 if matches.empty:
 
-    st.warning("No suppliers found for this category.")
+    st.warning(
+        "No suppliers found for this category."
+    )
 
 else:
 
-    st.success(f"{len(matches)} supplier(s) found")
+    st.success(
+        f"{len(matches)} supplier(s) found"
+    )
 
     st.dataframe(
         matches,
@@ -83,18 +92,24 @@ else:
     )
 
 # ==========================
-# SUPPLIER SELECTION
+# SCHEDULE MEETING
 # ==========================
 
 if not matches.empty:
 
     supplier = st.selectbox(
         "Select Supplier",
-        matches["Supplier"]
+        matches["supplier"]
     )
 
     if st.button("📅 Schedule Meeting"):
 
+        save_meeting(
+            latest_request["product"],
+            supplier,
+            str(date.today())
+        )
+
         st.success(
-            f"Meeting request generated for {supplier}"
+            f"Meeting scheduled with {supplier}"
         )

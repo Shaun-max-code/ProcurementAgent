@@ -1,7 +1,7 @@
 from backend.database import get_connection
 
 
-def save_request(product, category, moq, country):
+def save_meeting(brand, supplier, meeting_date):
 
     conn = get_connection()
 
@@ -9,11 +9,16 @@ def save_request(product, category, moq, country):
 
     cursor.execute(
         """
-        INSERT INTO requests
-        (product, category, moq, country)
+        INSERT INTO meetings
+        (brand, supplier, meeting_date, status)
         VALUES (?, ?, ?, ?)
         """,
-        (product, category, moq, country)
+        (
+            brand,
+            supplier,
+            meeting_date,
+            "Pending"
+        )
     )
 
     conn.commit()

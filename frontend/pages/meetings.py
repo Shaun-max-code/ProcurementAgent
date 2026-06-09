@@ -1,31 +1,74 @@
-# frontend/pages/meetings.py
-
 import streamlit as st
+import sqlite3
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+DB = ROOT / "procurement.db"
 
 st.title("📅 Meeting Coordination")
 
-brand = st.text_input("Brand Name")
+conn = sqlite3.connect(DB)
 
-supplier = st.text_input("Supplier")
+meetings = conn.execute(
+    """
+    SELECT
+        id,
+        brand,
+        supplier,
+        meeting_date,
+        status
+    FROM meetings
+    ORDER BY id DESC
+    """
+).fetchall()
 
-date = st.date_input("Meeting Date")
+conn.close()
 
-if st.button("Generate Meeting Request"):
+if not meetings:
 
-    st.success("Meeting Draft Generated")
+    st.warning("No meetings scheduled yet.")
 
-    st.text_area(
-        "Email",
-        f"""
-Hello {supplier},
+else:
 
-We would like to schedule a meeting regarding collaboration opportunities.
+    st.subheader("Scheduled Meetings")
 
-Meeting Date:
-{date}
+    for meeting in meetings:
 
-Regards,
-{brand}
-        """,
-        height=250
-    )
+        col1, col2 = st.columns([4,1])
+
+        with col1:
+
+            st.info(
+                f"""
+Brand: {meeting[1]}
+
+Supplier: {meeting[2]}
+
+Date: {meeting[3]}
+
+Status: {meeting[4]}
+"""
+            )
+
+        with col2:
+
+            if st.button(
+                "Complete",
+                key=f"complete_{meeting[0]}"
+            ):
+
+                conn = sqlite3.connect(DB)
+
+                conn.execute(
+                    """
+                    UPDATE meetings
+                    SET status='Completed'
+                    WHERE id=?
+                    """,
+                    (meeting[0],)
+                )
+
+                conn.commit()
+                conn.close()
+
+                st.rerun()

@@ -1,17 +1,32 @@
+import sqlite3
 import pandas as pd
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[2]
 
-SUPPLIER_FILE = BASE_DIR / "data" / "suppliers.csv"
+DB_FILE = ROOT / "procurement.db"
+
 
 def find_matches(category):
 
-    suppliers = pd.read_csv(SUPPLIER_FILE)
+    conn = sqlite3.connect(DB_FILE)
 
-    matches = suppliers[
-        suppliers["Category"].str.lower()
-        == category.lower()
-    ]
+    query = """
+    SELECT
+        supplier,
+        category,
+        moq,
+        country
+    FROM suppliers
+    WHERE category = ?
+    """
+
+    matches = pd.read_sql_query(
+        query,
+        conn,
+        params=(category,)
+    )
+
+    conn.close()
 
     return matches

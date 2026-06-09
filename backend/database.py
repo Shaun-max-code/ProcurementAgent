@@ -1,17 +1,68 @@
-import pandas as pd
+import sqlite3
 
-CLIENT_FILE = "data/client_requests.csv"
-SUPPLIER_FILE = "data/suppliers.csv"
-MEETING_FILE = "data/meetings.csv"
+DB_NAME = "procurement.db"
 
 
-def get_requests():
-    return pd.read_csv(CLIENT_FILE)
+def get_connection():
+
+    conn = sqlite3.connect(DB_NAME)
+
+    return conn
 
 
-def get_suppliers():
-    return pd.read_csv(SUPPLIER_FILE)
+def create_tables():
 
+    conn = get_connection()
 
-def get_meetings():
-    return pd.read_csv(MEETING_FILE)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS requests (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        product TEXT,
+        category TEXT,
+        moq INTEGER,
+        country TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS suppliers (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        supplier TEXT,
+        category TEXT,
+        moq INTEGER,
+        country TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS meetings (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        brand TEXT,
+        supplier TEXT,
+        meeting_date TEXT,
+        status TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS escalations (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        supplier TEXT,
+        issue TEXT,
+        priority TEXT
+    )
+    """)
+
+    conn.commit()
+
+    conn.close()

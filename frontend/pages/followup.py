@@ -1,18 +1,55 @@
-# frontend/pages/followup.py
-
 import streamlit as st
+import sqlite3
+import sys
+from pathlib import Path
 
-st.title("📝 Follow-Up Generator")
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT))
 
-notes = st.text_area("Meeting Notes")
+from backend.agents.followup import generate_followup
 
-if st.button("Generate Follow-Up"):
+DB = ROOT / "procurement.db"
 
-    st.success("Follow-Up Created")
+st.title("✉️ Follow-Up Generator")
 
-    st.write("Summary:")
-    st.write("Supplier interested in collaboration.")
+conn = sqlite3.connect(DB)
 
-    st.write("Next Steps:")
-    st.write("- Send samples")
-    st.write("- Discuss pricing")
+meetings = conn.execute(
+    """
+    SELECT
+        id,
+        brand,
+        supplier
+    FROM meetings
+    WHERE status='Completed'
+    """
+).fetchall()
+
+conn.close()
+
+if not meetings:
+
+    st.warning(
+        "No completed meetings available."
+    )
+
+else:
+
+    selected = st.selectbox(
+        "Select Meeting",
+        meetings,
+        format_func=lambda x: f"{x[1]} → {x[2]}"
+    )
+
+    if st.button("Generate Follow-Up"):
+
+        email = generate_followup(
+            selected[1],
+            selected[2]
+        )
+
+        st.text_area(
+            "Generated Email",
+            email,
+            height=300
+        )
