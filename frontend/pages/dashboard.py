@@ -1,91 +1,114 @@
 import streamlit as st
+import sqlite3
 import pandas as pd
+import sys
+from pathlib import Path
 
-try:
-    requests = pd.read_csv("../data/client_requests.csv")
-    request_count = len(requests)
-except:
-    request_count = 0
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT))
 
-st.set_page_config(page_title="Dashboard", page_icon="📊")
+from backend.agents.escalation import generate_escalations
+
+DB = ROOT / "procurement.db"
+
+st.set_page_config(
+    page_title="Dashboard",
+    page_icon="📊",
+    layout="wide"
+)
 
 st.title("📊 Procurement Dashboard")
 st.markdown("Welcome to the Procurement AI Platform")
 
-# =====================
+# ==========================
+# DATABASE CONNECTION
+# ==========================
+
+conn = sqlite3.connect(DB)
+
+# ==========================
+# COUNTS
+# ==========================
+
+try:
+    requests_count = conn.execute(
+        "SELECT COUNT(*) FROM requests"
+    ).fetchone()[0]
+except:
+    requests_count = 0
+
+try:
+    suppliers_count = conn.execute(
+        "SELECT COUNT(*) FROM suppliers"
+    ).fetchone()[0]
+except:
+    suppliers_count = 0
+
+try:
+    meetings_count = conn.execute(
+        "SELECT COUNT(*) FROM meetings"
+    ).fetchone()[0]
+except:
+    meetings_count = 0
+
+try:
+    escalations_count = len(
+        generate_escalations()
+    )
+except:
+    escalations_count = 0
+
+# ==========================
 # KPI CARDS
-# =====================
+# ==========================
 
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown("""
-    <div style="
-        padding:20px;
-        border-radius:15px;
-        background:#1E293B;
-        text-align:center;
-    ">
-        <h4>🏢 Brands</h4>
-        <h1>12</h1>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric(
+        "🏢 Client Requests",
+        requests_count
+    )
 
 with col2:
-    st.markdown("""
-    <div style="
-        padding:20px;
-        border-radius:15px;
-        background:#1E293B;
-        text-align:center;
-    ">
-        <h4>🏭 Suppliers</h4>
-        <h1>35</h1>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric(
+        "🏭 Suppliers",
+        suppliers_count
+    )
 
 with col3:
-    st.markdown("""
-    <div style="
-        padding:20px;
-        border-radius:15px;
-        background:#1E293B;
-        text-align:center;
-    ">
-        <h4>📅 Meetings</h4>
-        <h1>7</h1>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric(
+        "📅 Meetings",
+        meetings_count
+    )
 
 with col4:
-    st.markdown("""
-    <div style="
-        padding:20px;
-        border-radius:15px;
-        background:#1E293B;
-        text-align:center;
-    ">
-        <h4>⚠ Escalations</h4>
-        <h1>2</h1>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric(
+        "⚠ Escalations",
+        escalations_count
+    )
+
 st.divider()
 
-# =====================
+# ==========================
 # WORKFLOW STATUS
-# =====================
+# ==========================
 
 st.subheader("🔄 Workflow Status")
 
 workflow_data = pd.DataFrame({
     "Stage": [
         "Client Intake",
-        "Supplier Matching",
+        "Supplier Database",
         "Meeting Coordination",
-        "Follow-Up",
         "Escalation Monitoring"
     ],
-    "Requests": [15, 12, 8, 6, 2]
+    "Count": [
+        requests_count,
+        suppliers_count,
+        meetings_count,
+        escalations_count
+    ]
 })
 
 st.dataframe(
@@ -96,52 +119,157 @@ st.dataframe(
 
 st.divider()
 
-# =====================
-# RECENT ACTIVITY
-# =====================
+# ==========================
+# RECENT REQUESTS
+# ==========================
 
-st.subheader("📌 Recent Activity")
+st.subheader("📌 Recent Requests")
 
-st.success("Protein Bar request submitted")
-st.info("Supplier match generated for Cosmetics project")
-st.warning("Follow-up pending for FreshFactory")
-st.error("Supplier XYZ has not responded in 5 days")
+try:
+
+    recent_requests = pd.read_sql_query(
+        """
+        SELECT product,
+               category,
+               country
+        FROM requests
+        ORDER BY id DESC
+        LIMIT 5
+        """,
+        conn
+    )
+
+    if recent_requests.empty:
+
+        st.info("No requests yet.")
+
+    else:
+
+        for _, row in recent_requests.iterrows():
+
+            st.success(
+                f"{row['product']} | "
+                f"{row['category']} | "
+                f"{row['country']}"
+            )
+
+except Exception as e:
+
+    st.warning(str(e))
 
 st.divider()
 
-# =====================
+# ==========================
 # TOP SUPPLIERS
-# =====================
+# ==========================
 
-st.subheader("🏭 Top Suppliers")
+st.subheader("🏭 Supplier Database")
 
-supplier_data = pd.DataFrame({
-    "Supplier": [
-        "FoodCorp",
-        "FreshFactory",
-        "NutriFoods",
-        "BeautyLabs"
-    ],
-    "Match Rate": [
-        "95%",
-        "92%",
-        "88%",
-        "85%"
-    ]
-})
+try:
 
-st.dataframe(
-    supplier_data,
-    use_container_width=True,
-    hide_index=True
-)
+    suppliers = pd.read_sql_query(
+        """
+        SELECT supplier,
+               category,
+               moq,
+               country
+        FROM suppliers
+        LIMIT 10
+        """,
+        conn
+    )
+
+    st.dataframe(
+        suppliers,
+        use_container_width=True,
+        hide_index=True
+    )
+
+except Exception as e:
+
+    st.warning(str(e))
 
 st.divider()
 
-# =====================
+# ==========================
+# ACTIVE ESCALATIONS
+# ==========================
+
+st.subheader("⚠ Active Escalations")
+
+alerts = generate_escalations()
+
+if not alerts:
+
+    st.success(
+        "No active escalations"
+    )
+
+else:
+
+    for supplier, issue, severity in alerts:
+
+        if severity == "High":
+
+            st.error(
+                f"{supplier} - {issue}"
+            )
+
+        elif severity == "Medium":
+
+            st.warning(
+                f"{supplier} - {issue}"
+            )
+
+        else:
+
+            st.info(
+                f"{supplier} - {issue}"
+            )
+
+st.divider()
+
+# ==========================
+# RECENT MEETINGS
+# ==========================
+
+st.subheader("📅 Recent Meetings")
+
+try:
+
+    meetings = pd.read_sql_query(
+        """
+        SELECT brand,
+               supplier,
+               meeting_date,
+               status
+        FROM meetings
+        ORDER BY id DESC
+        LIMIT 5
+        """,
+        conn
+    )
+
+    st.dataframe(
+        meetings,
+        use_container_width=True,
+        hide_index=True
+    )
+
+except Exception as e:
+
+    st.warning(str(e))
+
+st.divider()
+
+# ==========================
 # SYSTEM STATUS
-# =====================
+# ==========================
 
 st.subheader("⚙️ System Status")
 
-st.success("✅ Procurement AI Platform Online")
+st.success(
+    "✅ Procurement AI Platform Online"
+)
+
+conn.close()

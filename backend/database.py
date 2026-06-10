@@ -52,6 +52,22 @@ def create_tables():
     )
     """)
 
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS followups (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    supplier TEXT,
+
+    brand TEXT,
+
+    followup_date TEXT,
+
+    status TEXT
+    )
+    """)
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS escalations (
 

@@ -1,4 +1,7 @@
 import streamlit as st
+import sqlite3
+from pathlib import Path
+import pandas as pd
 
 # ==========================================
 # PAGE CONFIG
@@ -10,6 +13,51 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# ==========================================
+# DATABASE
+# ==========================================
+
+ROOT = Path(__file__).resolve().parent.parent
+DB = ROOT / "procurement.db"
+
+conn = sqlite3.connect(DB)
+
+# ==========================================
+# KPI DATA
+# ==========================================
+
+try:
+    request_count = conn.execute(
+        "SELECT COUNT(*) FROM requests"
+    ).fetchone()[0]
+except:
+    request_count = 0
+
+try:
+    supplier_count = conn.execute(
+        "SELECT COUNT(*) FROM suppliers"
+    ).fetchone()[0]
+except:
+    supplier_count = 0
+
+try:
+    meeting_count = conn.execute(
+        "SELECT COUNT(*) FROM meetings"
+    ).fetchone()[0]
+except:
+    meeting_count = 0
+
+try:
+    escalation_count = conn.execute(
+        """
+        SELECT COUNT(*)
+        FROM escalations
+        WHERE status='Open'
+        """
+    ).fetchone()[0]
+except:
+    escalation_count = 0
 
 # ==========================================
 # SIDEBAR
@@ -33,11 +81,11 @@ st.markdown("""
 ### AI-Powered Supplier Discovery & Procurement Automation
 
 Manage your entire procurement lifecycle using intelligent supplier discovery,
-automated supplier matching, meeting coordination, follow-up generation,
-and escalation monitoring.
-
----
+automated supplier matching, meeting coordination,
+follow-up generation and escalation monitoring.
 """)
+
+st.divider()
 
 # ==========================================
 # KPI CARDS
@@ -47,30 +95,26 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.metric(
-        "🏢 Active Brands",
-        "12",
-        "+2"
+        "📋 Requests",
+        request_count
     )
 
 with col2:
     st.metric(
         "🏭 Suppliers",
-        "35",
-        "+5"
+        supplier_count
     )
 
 with col3:
     st.metric(
         "📅 Meetings",
-        "7",
-        "+1"
+        meeting_count
     )
 
 with col4:
     st.metric(
         "⚠️ Escalations",
-        "2",
-        "-1"
+        escalation_count
     )
 
 st.divider()
@@ -84,6 +128,7 @@ st.subheader("⚡ Quick Access")
 col1, col2, col3 = st.columns(3)
 
 with col1:
+
     st.page_link(
         "pages/dashboard.py",
         label="📊 Dashboard"
@@ -95,6 +140,7 @@ with col1:
     )
 
 with col2:
+
     st.page_link(
         "pages/matching.py",
         label="🏭 Supplier Matching"
@@ -106,6 +152,7 @@ with col2:
     )
 
 with col3:
+
     st.page_link(
         "pages/followup.py",
         label="✉️ Follow-Ups"
@@ -119,92 +166,151 @@ with col3:
 st.divider()
 
 # ==========================================
-# WORKFLOW
+# WORKFLOW SUMMARY
 # ==========================================
 
-st.subheader("🔄 Procurement Workflow")
+st.subheader("🔄 Workflow Summary")
 
-workflow_html = """
-<div style="
-padding:25px;
-border-radius:15px;
-background:#1E293B;
-font-size:20px;
-font-weight:bold;
-text-align:center;
-line-height:2.2;
-">
+workflow_df = pd.DataFrame({
+    "Stage": [
+        "Client Intake",
+        "Supplier Matching",
+        "Meeting Coordination"
+    ],
+    "Count": [
+        request_count,
+        supplier_count,
+        meeting_count
+    ]
+})
 
-📋 Client Intake
-<br>⬇️<br>
-
-🏭 Supplier Matching
-<br>⬇️<br>
-
-📅 Meeting Coordination
-<br>⬇️<br>
-
-✉️ Follow-Up Generation
-<br>⬇️<br>
-
-⚠️ Escalation Monitoring
-
-</div>
-"""
-
-st.markdown(
-    workflow_html,
-    unsafe_allow_html=True
+st.dataframe(
+    workflow_df,
+    use_container_width=True,
+    hide_index=True
 )
 
 st.divider()
 
 # ==========================================
-# FEATURES
+# RECENT REQUESTS
 # ==========================================
 
-st.subheader("✨ Platform Features")
+st.subheader("📋 Recent Requests")
 
-left, right = st.columns(2)
+try:
 
-with left:
+    requests = conn.execute(
+        """
+        SELECT product,
+               category,
+               country
+        FROM requests
+        ORDER BY id DESC
+        LIMIT 5
+        """
+    ).fetchall()
 
-    st.info("""
-### 📋 Client Intake
+    if requests:
 
-Capture procurement requirements:
+        for req in requests:
 
-- Product Name
-- Category
-- MOQ
-- Country
-- Client Details
-""")
+            st.info(
+                f"Product: {req[0]} | Category: {req[1]} | Country: {req[2]}"
+            )
 
-    st.info("""
-### 🏭 Supplier Matching
+    else:
 
-Automatically match suppliers based on:
+        st.warning(
+            "No requests available."
+        )
 
-- Category
-- MOQ
-- Location
-- Procurement Rules
-""")
+except:
 
-with right:
+    st.warning(
+        "No request data found."
+    )
 
-    st.info("""
-### 📅 Meeting Coordination
+st.divider()
 
-Generate supplier meeting requests and schedules automatically.
-""")
+# ==========================================
+# RECENT MEETINGS
+# ==========================================
 
-    st.info("""
-### ✉️ Follow-Up & Escalation
+st.subheader("📅 Recent Meetings")
 
-Track supplier responses and create follow-ups and escalations.
-""")
+try:
+
+    meetings = conn.execute(
+        """
+        SELECT brand,
+               supplier,
+               meeting_date,
+               status
+        FROM meetings
+        ORDER BY id DESC
+        LIMIT 5
+        """
+    ).fetchall()
+
+    if meetings:
+
+        for meeting in meetings:
+
+            st.success(
+                f"{meeting[0]} → {meeting[1]} | {meeting[3]}"
+            )
+
+    else:
+
+        st.warning(
+            "No meetings scheduled."
+        )
+
+except:
+
+    st.warning(
+        "No meeting data found."
+    )
+
+st.divider()
+
+# ==========================================
+# ACTIVE ESCALATIONS
+# ==========================================
+
+st.subheader("⚠️ Active Escalations")
+
+try:
+
+    escalations = conn.execute(
+        """
+        SELECT supplier,
+               issue
+        FROM escalations
+        WHERE status='Open'
+        """
+    ).fetchall()
+
+    if escalations:
+
+        for esc in escalations:
+
+            st.error(
+                f"{esc[0]} - {esc[1]}"
+            )
+
+    else:
+
+        st.success(
+            "No active escalations."
+        )
+
+except:
+
+    st.success(
+        "No escalation table found yet."
+    )
 
 st.divider()
 
@@ -214,16 +320,19 @@ st.divider()
 
 st.subheader("📈 Platform Status")
 
-status1, status2, status3 = st.columns(3)
+st.success("✅ Database Connected")
 
-with status1:
-    st.success("✅ Intake Agent Online")
+st.success(
+    f"✅ {request_count} procurement requests processed"
+)
 
-with status2:
-    st.success("✅ Matching Agent Online")
+st.success(
+    f"✅ {meeting_count} meetings tracked"
+)
 
-with status3:
-    st.success("✅ Meeting Agent Online")
+st.success(
+    "✅ Procurement Workflow Active"
+)
 
 st.divider()
 
@@ -232,5 +341,7 @@ st.divider()
 # ==========================================
 
 st.success(
-    "🚀 Procurement AI Platform Ready. Use the sidebar or Quick Access section to begin."
+    "🚀 Procurement AI Platform Ready"
 )
+
+conn.close()

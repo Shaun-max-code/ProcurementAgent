@@ -1,31 +1,40 @@
 import streamlit as st
-import pandas as pd
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT))
 
-ESCALATION_FILE = ROOT / "data" / "escalations.csv"
+from backend.agents.escalation import generate_escalations
 
-st.title("⚠ Escalation Monitor")
+st.title("⚠️ Escalation Monitor")
 
-df = pd.read_csv(ESCALATION_FILE)
+alerts = generate_escalations()
 
-for _, row in df.iterrows():
+if not alerts:
 
-    if row["Days"] >= 7:
+    st.success("✅ No escalations found")
 
-        st.error(
-            f"{row['Supplier']} - {row['Issue']} ({row['Days']} days)"
-        )
+else:
 
-    elif row["Days"] >= 5:
+    st.subheader("Active Escalations")
 
-        st.warning(
-            f"{row['Supplier']} - {row['Issue']} ({row['Days']} days)"
-        )
+    for supplier, issue, severity in alerts:
 
-    else:
+        if severity == "High":
 
-        st.success(
-            f"{row['Supplier']} - {row['Issue']} ({row['Days']} days)"
-        )
+            st.error(
+                f"{supplier} - {issue}"
+            )
+
+        elif severity == "Medium":
+
+            st.warning(
+                f"{supplier} - {issue}"
+            )
+
+        else:
+
+            st.success(
+                f"{supplier} - {issue}"
+            )
