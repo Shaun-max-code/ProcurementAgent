@@ -2,11 +2,13 @@ import sqlite3
 
 conn = sqlite3.connect("procurement.db")
 
-rows = conn.execute(
-    "SELECT * FROM suppliers"
-).fetchall()
+conn.execute("""
+UPDATE suppliers
+SET description='Protein snacks and nutrition products'
+WHERE supplier='FoodCorp'
+""")
 
-for row in rows:
-    print(row)
-
+conn.commit()
 conn.close()
+
+print("Descriptions added")

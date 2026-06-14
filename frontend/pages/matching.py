@@ -8,12 +8,12 @@ from datetime import date
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
 
+from backend.agents.matching import find_matches
 from backend.agents.meeting import save_meeting
-from backend.agents.ai_matching import find_ai_matches
 
 DB = ROOT / "procurement.db"
 
-st.title("🏭 AI Supplier Matching")
+st.title("🏭 AI-Powered Supplier Matching")
 
 # ==========================================
 # LOAD LATEST REQUEST
@@ -42,6 +42,8 @@ try:
 
     latest_request = requests.iloc[-1]
 
+    conn.close()
+
 except Exception as e:
 
     st.error(
@@ -51,7 +53,7 @@ except Exception as e:
     st.stop()
 
 # ==========================================
-# SHOW REQUEST
+# DISPLAY REQUEST
 # ==========================================
 
 st.subheader("📋 Latest Client Request")
@@ -81,33 +83,16 @@ with col2:
 st.divider()
 
 # ==========================================
-# LOAD SUPPLIERS
-# ==========================================
-
-suppliers = pd.read_sql_query(
-    """
-    SELECT
-        supplier AS Supplier,
-        category AS Category,
-        moq AS MOQ,
-        country AS Country
-    FROM suppliers
-    """,
-    conn
-)
-
-conn.close()
-
-# ==========================================
 # AI MATCHING
 # ==========================================
 
-matches = find_ai_matches(
-    latest_request["product"],
-    suppliers
+matches = find_matches(
+    latest_request["product"]
 )
 
-st.subheader("🤖 AI Supplier Recommendations")
+st.subheader(
+    "🤖 AI-Powered Supplier Recommendations"
+)
 
 if matches.empty:
 
@@ -117,40 +102,68 @@ if matches.empty:
 
 else:
 
-    matches["AI Score"] = (
-        matches["Score"] * 100
-    ).round(2)
+    matches["match_score"] = (
+        matches["match_score"]
+        .round(0)
+        .astype(int)
+    )
 
     st.dataframe(
         matches[
             [
-                "Supplier",
-                "Category",
-                "MOQ",
-                "Country",
-                "AI Score"
+                
+              "supplier",
+               "category",
+               "description",
+                 "country",
+                "match_score"
+     ]
             ]
         ],
         use_container_width=True
     )
 
+st.divider()
+
 # ==========================================
-# SELECT SUPPLIER
+# TOP MATCH
 # ==========================================
 
-supplier = st.selectbox(
-    "Select Supplier",
-    matches["Supplier"]
-)
+if not matches.empty:
 
-if st.button("📅 Schedule Meeting"):
-
-    save_meeting(
-        latest_request["product"],
-        supplier,
-        str(date.today())
-    )
+    best_supplier = matches.iloc[0]
 
     st.success(
-        f"Meeting scheduled with {supplier}"
+        f"""
+🏆 Best Match
+
+Supplier: {best_supplier['supplier']}
+
+Match Score: {best_supplier['match_score']}%
+"""
     )
+
+# ==========================================
+# SCHEDULE MEETING
+# ==========================================
+
+if not matches.empty:
+
+    supplier = st.selectbox(
+        "Select Supplier",
+        matches["supplier"]
+    )
+
+    if st.button(
+        "📅 Schedule Meeting"
+    ):
+
+        save_meeting(
+            latest_request["product"],
+            supplier,
+            str(date.today())
+        )
+
+        st.success(
+            f"Meeting scheduled with {supplier}"
+        )
