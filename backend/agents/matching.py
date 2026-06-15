@@ -8,7 +8,6 @@ ROOT = Path(__file__).resolve().parents[2]
 DB_FILE = ROOT / "procurement.db"
 
 
-
 def find_matches(
     product_name,
     category,
@@ -25,7 +24,8 @@ def find_matches(
             category,
             moq,
             country,
-            description
+            description,
+            cannot_do
         FROM suppliers
         """,
         conn
@@ -36,7 +36,19 @@ def find_matches(
     if suppliers.empty:
         return suppliers
 
-    # Filter suppliers by category first
+    # ==========================================
+    # REMOVE SUPPLIERS WHO REJECTED THIS CATEGORY
+    # ==========================================
+
+    suppliers = suppliers[
+        suppliers["cannot_do"].fillna("").str.lower()
+        != category.lower()
+    ]
+
+    # ==========================================
+    # FILTER BY CATEGORY
+    # ==========================================
+
     suppliers = suppliers[
         suppliers["category"].str.lower()
         == category.lower()
