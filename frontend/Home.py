@@ -130,7 +130,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
 
     st.page_link(
-        "pages/dashboard.py",
+        "pages/crm.py",
         label="📊 Dashboard"
     )
 
@@ -162,6 +162,16 @@ with col3:
         "pages/escalations.py",
         label="⚠️ Escalations"
     )
+
+    st.page_link(
+    "pages/email_center.py",
+    label="✉️ Email Center"
+    )
+
+    st.page_link(
+    "pages/competitors.py",
+    label="🏭 Competitor Discovery"
+)
 
 st.divider()
 

@@ -150,6 +150,43 @@ def create_tables():
     notes TEXT
   )
  """)
+       # ==========================================
+    # EMAIL HISTORY
+    # ==========================================
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS emails (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        supplier TEXT,
+
+        product TEXT,
+
+        email_type TEXT,
+
+        email_content TEXT,
+
+        created_date TEXT
+    )
+    """)
+
+    # ==========================================
+    # COMPETITOR DATABASE
+    # ==========================================
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS competitors (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        competitor TEXT,
+
+        manufacturer TEXT,
+
+        confidence_score INTEGER
+    )
+    """)
 
     conn.commit()
 
