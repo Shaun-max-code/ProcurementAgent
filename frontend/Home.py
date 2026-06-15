@@ -120,42 +120,67 @@ with col4:
 st.divider()
 
 # ==========================================
-# QUICK ACCESS
+# PROCUREMENT WORKFLOW NAVIGATION
 # ==========================================
 
-st.subheader("⚡ Quick Access")
+st.subheader("🚀 Procurement Workflow")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
 
     st.page_link(
-        "pages/crm.py",
-        label="📊 Dashboard"
+        "pages/intake.py",
+        label="📋 Client Intake"
     )
 
     st.page_link(
-        "pages/intake.py",
-        label="📋 Client Intake"
+        "pages/matching.py",
+        label="🤖 Supplier Matching"
+    )
+
+    st.page_link(
+        "pages/outreach.py",
+        label="📧 Supplier Outreach"
+    )
+
+    st.page_link(
+        "pages/maybe.py",
+        label="❓ Maybe Questions"
     )
 
 with col2:
 
     st.page_link(
-        "pages/matching.py",
-        label="🏭 Supplier Matching"
+        "pages/pipeline.py",
+        label="🔄 Deal Pipeline"
+    )
+
+    st.page_link(
+        "pages/crm.py",
+        label="📊 CRM Dashboard"
+    )
+
+    st.page_link(
+        "pages/handoff.py",
+        label="🤝 Human Handoffs"
     )
 
     st.page_link(
         "pages/meetings.py",
-        label="📅 Meeting Coordination"
+        label="📅 Meetings"
     )
 
 with col3:
 
     st.page_link(
-        "pages/followup.py",
-        label="✉️ Follow-Ups"
+        "pages/email_center.py",
+        label="✉️ Email Center"
+    )
+
+    st.page_link(
+        "pages/email_history.py",
+        label="📨 Email History"
     )
 
     st.page_link(
@@ -164,14 +189,9 @@ with col3:
     )
 
     st.page_link(
-    "pages/email_center.py",
-    label="✉️ Email Center"
+        "pages/competitors.py",
+        label="🏭 Competitor Discovery"
     )
-
-    st.page_link(
-    "pages/competitors.py",
-    label="🏭 Competitor Discovery"
-)
 
 st.divider()
 
@@ -220,8 +240,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-meeting_status = "⏳ Pending"
-followup_status = "⏳ Pending"
+
+meeting_status = (
+    f"✅ {meeting_count}"
+    if meeting_count > 0
+    else "⏳ Pending"
+)
+
+followup_status = "🔄 Active"
 escalation_status = "🔴 Active" if escalation_count > 0 else "✅ Clear"
 
 st.markdown(f"""
