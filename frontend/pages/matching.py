@@ -13,6 +13,7 @@ from backend.agents.meeting import save_meeting
 
 DB = ROOT / "procurement.db"
 
+
 st.title("🏭 AI-Powered Supplier Matching")
 
 try:
@@ -33,7 +34,11 @@ try:
         st.warning("No client requests found.")
         st.stop()
 
-    latest_request = requests.iloc[-1]
+    latest_request = requests.iloc[0]
+
+    st.write(requests)
+    st.write("Latest row:")
+    st.write(latest_request)
 
 except Exception as e:
     st.error(f"Database Error: {e}")
@@ -54,7 +59,10 @@ with col2:
 st.divider()
 
 matches = find_matches(
-    latest_request["product"]
+    latest_request["product"],
+    latest_request["category"],
+    latest_request["country"],
+    latest_request["moq"]
 )
 
 st.subheader("🤖 AI-Powered Supplier Recommendations")

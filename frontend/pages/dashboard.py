@@ -3,6 +3,7 @@ import sqlite3
 import pandas as pd
 import sys
 from pathlib import Path
+import plotly.express as px
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
@@ -158,6 +159,119 @@ except Exception as e:
     st.warning(str(e))
 
 st.divider()
+
+st.subheader("📊 Requests By Category")
+
+try:
+
+    category_data = pd.read_sql_query(
+        """
+        SELECT
+            category,
+            COUNT(*) as total
+        FROM requests
+        GROUP BY category
+        """,
+        conn
+    )
+
+    if not category_data.empty:
+
+      fig = px.bar(
+    category_data,
+    x="category",
+    y="total",
+    text="total",
+    title="Requests By Category"
+)
+
+      fig.update_layout(
+    height=400,
+    xaxis_title="Category",
+    yaxis_title="Requests",
+    showlegend=False
+)
+
+      st.plotly_chart(
+      fig,
+      use_container_width=True
+)
+
+except Exception as e:
+
+    st.warning(
+        f"Chart Error: {e}"
+    )
+
+    st.subheader("📅 Meetings By Status")
+
+try:
+
+    meeting_data = pd.read_sql_query(
+        """
+        SELECT
+            status,
+            COUNT(*) as total
+        FROM meetings
+        GROUP BY status
+        """,
+        conn
+    )
+
+    if not meeting_data.empty:
+
+        fig = px.pie(
+            meeting_data,
+            names="status",
+            values="total",
+            title="Meetings By Status"
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+except Exception as e:
+
+    st.warning(
+        f"Chart Error: {e}"
+    )
+
+st.subheader("🌎 Suppliers By Country")
+
+try:
+
+    supplier_data = pd.read_sql_query(
+        """
+        SELECT
+            country,
+            COUNT(*) as total
+        FROM suppliers
+        GROUP BY country
+        """,
+        conn
+    )
+
+    if not supplier_data.empty:
+
+        fig = px.bar(
+            supplier_data,
+            x="country",
+            y="total",
+            title="Suppliers By Country"
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+except Exception as e:
+
+    st.warning(
+        f"Chart Error: {e}"
+    )
 
 # ==========================
 # TOP SUPPLIERS

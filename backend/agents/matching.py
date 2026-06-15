@@ -8,7 +8,13 @@ ROOT = Path(__file__).resolve().parents[2]
 DB_FILE = ROOT / "procurement.db"
 
 
-def find_matches(product_name):
+
+def find_matches(
+    product_name,
+    category,
+    country,
+    moq
+):
 
     conn = sqlite3.connect(DB_FILE)
 
@@ -30,6 +36,15 @@ def find_matches(product_name):
     if suppliers.empty:
         return suppliers
 
+    # Filter suppliers by category first
+    suppliers = suppliers[
+        suppliers["category"].str.lower()
+        == category.lower()
+    ]
+
+    if suppliers.empty:
+        return suppliers
+
     scores = []
 
     for _, row in suppliers.iterrows():
@@ -41,7 +56,7 @@ def find_matches(product_name):
             f"{row['country']}"
         )
 
-        score = max(
+        description_score = max(
             fuzz.token_sort_ratio(
                 product_name.lower(),
                 supplier_text.lower()
@@ -52,7 +67,26 @@ def find_matches(product_name):
             )
         )
 
-        scores.append(score)
+        score = 0
+
+        # Category Match
+        if row["category"].lower() == category.lower():
+            score += 50
+
+        # Country Match
+        if row["country"].lower() == country.lower():
+            score += 20
+
+        # MOQ Match
+        if row["moq"] >= moq:
+            score += 15
+
+        # Description Similarity
+        score += description_score * 0.15
+
+        score = min(score, 100)
+
+        scores.append(round(score, 2))
 
     suppliers["match_score"] = scores
 
@@ -61,9 +95,10 @@ def find_matches(product_name):
     for _, row in suppliers.iterrows():
 
         reason = (
-            f"Matches category '{row['category']}' "
-            f"and specializes in "
-            f"{row['description']}"
+            f"Matches category '{row['category']}', "
+            f"supports MOQ {row['moq']}, "
+            f"located in {row['country']} and "
+            f"specializes in {row['description']}"
         )
 
         reasons.append(reason)

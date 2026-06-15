@@ -166,29 +166,88 @@ with col3:
 st.divider()
 
 # ==========================================
-# WORKFLOW SUMMARY
+# WORKFLOW NAVIGATION
 # ==========================================
 
-st.subheader("🔄 Workflow Summary")
+st.subheader("🔄 Procurement Workflow")
 
-workflow_df = pd.DataFrame({
-    "Stage": [
-        "Client Intake",
-        "Supplier Matching",
-        "Meeting Coordination"
-    ],
-    "Count": [
-        request_count,
-        supplier_count,
-        meeting_count
-    ]
-})
+st.markdown("""
+<style>
 
-st.dataframe(
-    workflow_df,
-    use_container_width=True,
-    hide_index=True
-)
+.workflow-card{
+    background:#111827;
+    border:1px solid #374151;
+    border-radius:18px;
+    padding:18px;
+    font-size:22px;
+    font-weight:600;
+    margin-bottom:10px;
+    text-align:center;
+}
+
+.arrow{
+    text-align:center;
+    font-size:30px;
+    color:#9CA3AF;
+    margin:4px;
+}
+
+.done{
+    color:#22C55E;
+    float:right;
+}
+
+.pending{
+    color:#F59E0B;
+    float:right;
+}
+
+.active{
+    color:#EF4444;
+    float:right;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+meeting_status = "⏳ Pending"
+followup_status = "⏳ Pending"
+escalation_status = "🔴 Active" if escalation_count > 0 else "✅ Clear"
+
+st.markdown(f"""
+<div class="workflow-card">
+📋 Client Intake
+<span class="done">✅ {request_count}</span>
+</div>
+
+<div class="arrow">↓</div>
+
+<div class="workflow-card">
+🤖 Supplier Matching
+<span class="done">✅ {supplier_count}</span>
+</div>
+
+<div class="arrow">↓</div>
+
+<div class="workflow-card">
+📅 Meeting Coordination
+<span class="pending">{meeting_status}</span>
+</div>
+
+<div class="arrow">↓</div>
+
+<div class="workflow-card">
+✉️ Follow-Up
+<span class="pending">{followup_status}</span>
+</div>
+
+<div class="arrow">↓</div>
+
+<div class="workflow-card">
+⚠️ Escalation Monitoring
+<span class="active">{escalation_status}</span>
+</div>
+""", unsafe_allow_html=True)
 
 st.divider()
 
